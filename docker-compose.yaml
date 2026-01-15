@@ -1,0 +1,22 @@
+version: "3.8"
+
+name: markdown-notes
+
+services:
+  db:
+    container_name: "markdown-notes-db"
+    image: postgres:12.4-alpine
+    volumes:
+      - "./database/postgres-data:/var/lib/postgresql/data:rw"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
