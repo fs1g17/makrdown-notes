@@ -5,6 +5,7 @@ import (
 	"log"
 	"markdown-notes/internal/api"
 	"markdown-notes/internal/middleware"
+	"markdown-notes/internal/service"
 	"markdown-notes/internal/store"
 	"markdown-notes/internal/utils"
 	"markdown-notes/migrations"
@@ -42,8 +43,11 @@ func NewApp() (*App, error) {
 	notesStore := store.NewPostgresNotesStore(pgDB)
 	folderStore := store.NewPostgresFoldersStore(pgDB)
 
+	// our services will go here
+	registerUserSercvice := service.NewRegisterUserService(pgDB, userStore, folderStore)
+
 	// our handlers will go here
-	userHandler := api.NewUserHandler(userStore, folderStore, logger)
+	userHandler := api.NewUserHandler(userStore, folderStore, registerUserSercvice, logger)
 	tokenHandler := api.NewTokenhandler(tokenStore, userStore, logger)
 	notesHandler := api.NewNotesHandler(notesStore, logger)
 

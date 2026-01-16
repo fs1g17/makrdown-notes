@@ -63,20 +63,20 @@ func NewPostgresUserStore(db *sql.DB) *PostgresUserStore {
 }
 
 type UserStore interface {
-	CreateUser(*User) error
+	CreateUser(*sql.Tx, *User) error
 	GetUserByUsername(username string) (*User, error)
 	UpdateUser(*User) error
 	GetUserToken(scope, tokenPlainText string) (*User, error)
 }
 
-func (s *PostgresUserStore) CreateUser(user *User) error {
+func (s *PostgresUserStore) CreateUser(tx *sql.Tx, user *User) error {
 	query := `
 	INSERT INTO users (username, email, password_hash)
 	VALUES ($1, $2, $3)
 	RETURNING id, created_at, updated_at;
 	`
 
-	err := s.db.QueryRow(query, user.Username, user.Email, user.PasswordHash.hash).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+	err := tx.QueryRow(query, user.Username, user.Email, user.PasswordHash.hash).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return err
 	}

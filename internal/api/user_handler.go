@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"markdown-notes/internal/service"
 	"markdown-notes/internal/store"
 	"markdown-notes/internal/utils"
 
@@ -19,16 +20,18 @@ type registerUserRequest struct {
 }
 
 type UserHandler struct {
-	userStore    store.UserStore
-	foldersStore store.FoldersStore
-	logger       *log.Logger
+	userStore           store.UserStore
+	foldersStore        store.FoldersStore
+	registerUserService service.RegisterUserServiceI
+	logger              *log.Logger
 }
 
-func NewUserHandler(userStore store.UserStore, foldersStore store.FoldersStore, logger *log.Logger) *UserHandler {
+func NewUserHandler(userStore store.UserStore, foldersStore store.FoldersStore, registerUserService service.RegisterUserServiceI, logger *log.Logger) *UserHandler {
 	return &UserHandler{
-		userStore:    userStore,
-		foldersStore: foldersStore,
-		logger:       logger,
+		userStore:           userStore,
+		foldersStore:        foldersStore,
+		registerUserService: registerUserService,
+		logger:              logger,
 	}
 }
 
@@ -80,15 +83,9 @@ func (h *UserHandler) HandleRegisterUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
 	}
 
-	err = h.userStore.CreateUser(user)
+	folder_id, err := h.registerUserService.RegisterUser(user)
 	if err != nil {
-		h.logger.Printf("Error: creating user %v", err)
-		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
-	}
-
-	folder_id, err := h.foldersStore.CreateFolder(user.ID, nil, "root")
-	if err != nil {
-		h.logger.Printf("Error: creating root folder %v", err)
+		h.logger.Printf("Error: registering user failed %v", err)
 		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
 	}
 

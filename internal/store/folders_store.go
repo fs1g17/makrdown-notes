@@ -24,6 +24,7 @@ func NewPostgresFoldersStore(db *sql.DB) *PostgresFoldersStore {
 
 type FoldersStore interface {
 	CreateFolder(user_id int64, parent_id *int64, name string) (int64, error)
+	CreateFolderTx(tx *sql.Tx, user_id int64, parent_id *int64, name string) (int64, error)
 	GetRootFolder(user_id int64) (int64, error)
 }
 
@@ -36,6 +37,22 @@ func (f *PostgresFoldersStore) CreateFolder(user_id int64, parent_id *int64, nam
 
 	var folder_id int64
 	err := f.db.QueryRow(query, user_id, parent_id, name).Scan(&folder_id)
+	if err != nil {
+		return 0, err
+	}
+
+	return folder_id, nil
+}
+
+func (f *PostgresFoldersStore) CreateFolderTx(tx *sql.Tx, user_id int64, parent_id *int64, name string) (int64, error) {
+	query := `
+	INSERT INTO folders (user_id, parent_id, name)
+	VALUES ($1, $2, $3)
+	RETURNING id;
+	`
+
+	var folder_id int64
+	err := tx.QueryRow(query, user_id, parent_id, name).Scan(&folder_id)
 	if err != nil {
 		return 0, err
 	}
