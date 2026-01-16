@@ -19,11 +19,11 @@ func NewPostgresTokenStore(db *sql.DB) *PostgresTokenStore {
 
 type TokenStore interface {
 	Insert(token *tokens.Token) error
-	CreateNewToken(userID int, ttl time.Duration, scope string) (*tokens.Token, error)
+	CreateNewToken(userID int64, ttl time.Duration, scope string) (*tokens.Token, error)
 	DeleteAllTokensForUser(userID int, scope string) error
 }
 
-func (t *PostgresTokenStore) CreateNewToken(userID int, ttl time.Duration, scope string) (*tokens.Token, error) {
+func (t *PostgresTokenStore) CreateNewToken(userID int64, ttl time.Duration, scope string) (*tokens.Token, error) {
 	token, err := tokens.GenerateToken(userID, ttl, scope)
 	if err != nil {
 		return nil, err

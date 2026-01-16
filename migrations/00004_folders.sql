@@ -11,7 +11,10 @@ CREATE TABLE IF NOT EXISTS folders (
 );
 
 ALTER TABLE notes
-  ADD COLUMN folder_id BIGINT REFERENCES folders(id) ON DELETE CASCADE;
+  ADD COLUMN folder_id BIGINT NOT NULL REFERENCES folders(id) ON DELETE CASCADE;
+
+ALTER TABLE notes 
+  ADD CONSTRAINT notes_unique_title_per_folder UNIQUE (user_id, title, folder_id);
 
 CREATE INDEX idx_folders_user_parent ON folders(user_id, parent_id);
 CREATE INDEX idx_notes_user_folder ON notes(user_id, folder_id);

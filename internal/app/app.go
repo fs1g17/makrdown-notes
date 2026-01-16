@@ -19,6 +19,7 @@ type App struct {
 	DB             *sql.DB
 	UserHandler    *api.UserHandler
 	TokenHandler   *api.TokenHandler
+	NotesHandler   *api.NotesHandler
 	UserMiddleware *middleware.UserMiddleware
 }
 
@@ -38,16 +39,20 @@ func NewApp() (*App, error) {
 	// our stores will go hore
 	userStore := store.NewPostgresUserStore(pgDB)
 	tokenStore := store.NewPostgresTokenStore(pgDB)
+	notesStore := store.NewPostgresNotesStore(pgDB)
+	folderStore := store.NewPostgresFoldersStore(pgDB)
 
 	// our handlers will go here
-	userHandler := api.NewUserHandler(userStore, logger)
+	userHandler := api.NewUserHandler(userStore, folderStore, logger)
 	tokenHandler := api.NewTokenhandler(tokenStore, userStore, logger)
+	notesHandler := api.NewNotesHandler(notesStore, logger)
 
 	app := &App{
 		Logger:       logger,
 		DB:           pgDB,
 		UserHandler:  userHandler,
 		TokenHandler: tokenHandler,
+		NotesHandler: notesHandler,
 		UserMiddleware: &middleware.UserMiddleware{
 			UserStore: userStore,
 		},

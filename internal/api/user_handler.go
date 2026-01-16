@@ -19,14 +19,16 @@ type registerUserRequest struct {
 }
 
 type UserHandler struct {
-	userStore store.UserStore
-	logger    *log.Logger
+	userStore    store.UserStore
+	foldersStore store.FoldersStore
+	logger       *log.Logger
 }
 
-func NewUserHandler(userStore store.UserStore, logger *log.Logger) *UserHandler {
+func NewUserHandler(userStore store.UserStore, foldersStore store.FoldersStore, logger *log.Logger) *UserHandler {
 	return &UserHandler{
-		userStore: userStore,
-		logger:    logger,
+		userStore:    userStore,
+		foldersStore: foldersStore,
+		logger:       logger,
 	}
 }
 
@@ -84,5 +86,11 @@ func (h *UserHandler) HandleRegisterUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusCreated, utils.Envelope{"user": user})
+	folder_id, err := h.foldersStore.CreateFolder(user.ID, nil, "root")
+	if err != nil {
+		h.logger.Printf("Error: creating root folder %v", err)
+		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusCreated, utils.Envelope{"user": user, "root": folder_id})
 }
