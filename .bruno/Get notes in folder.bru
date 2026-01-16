@@ -1,19 +1,17 @@
 meta {
-  name: Create note
+  name: Get notes in folder
   type: http
-  seq: 5
+  seq: 6
 }
 
-post {
-  url: http://localhost:8080/notes/new
+get {
+  url: http://localhost:8080/notes
   body: json
   auth: inherit
 }
 
 body:json {
   {
-    "title": "test2",
-    "note": "hello world!",
     "folder_id": 1
   }
 }

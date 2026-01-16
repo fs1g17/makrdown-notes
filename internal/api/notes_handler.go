@@ -65,3 +65,36 @@ func (h *NotesHandler) HandleCreateNote(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, utils.Envelope{"note_id": note_id})
 }
+
+type getNotesInFolderRequest struct {
+	FolderID int64 `json:"folder_id"`
+}
+
+func (r *getNotesInFolderRequest) validate() error {
+	if r.FolderID == 0 {
+		return errors.New("folder_id is required")
+	}
+
+	return nil
+}
+
+func (h *NotesHandler) HandleGetNotesInFolder(c echo.Context) error {
+	var req getNotesInFolderRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+	}
+
+	err := req.validate()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+	}
+
+	user := c.Get("user").(*store.User)
+	notes, err := h.notesStore.GetNotesInFolder(user.ID, req.FolderID)
+	if err != nil {
+		h.logger.Printf("Error: creating note %v", err)
+		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, utils.Envelope{"notes": notes})
+}
