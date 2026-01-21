@@ -45,11 +45,12 @@ func NewApp() (*App, error) {
 
 	// our services will go here
 	registerUserSercvice := service.NewRegisterUserService(pgDB, userStore, folderStore)
+	folderContentsService := service.NewFolderContentsService(pgDB, userStore, folderStore, notesStore)
 
 	// our handlers will go here
 	userHandler := api.NewUserHandler(userStore, folderStore, registerUserSercvice, logger)
 	tokenHandler := api.NewTokenhandler(tokenStore, userStore, logger)
-	notesHandler := api.NewNotesHandler(notesStore, logger)
+	notesHandler := api.NewNotesHandler(notesStore, folderContentsService, logger)
 
 	app := &App{
 		Logger:       logger,

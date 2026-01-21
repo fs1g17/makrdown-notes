@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"log"
+	"markdown-notes/internal/service"
 	"markdown-notes/internal/store"
 	"markdown-notes/internal/utils"
 	"net/http"
@@ -11,14 +12,20 @@ import (
 )
 
 type NotesHandler struct {
-	notesStore store.NotesStore
-	logger     *log.Logger
+	notesStore            store.NotesStore
+	folderContentsService service.FolderContentsServiceI
+	logger                *log.Logger
 }
 
-func NewNotesHandler(notesStore store.NotesStore, logger *log.Logger) *NotesHandler {
+func NewNotesHandler(
+	notesStore store.NotesStore,
+	folderContentsService service.FolderContentsServiceI,
+	logger *log.Logger,
+) *NotesHandler {
 	return &NotesHandler{
-		notesStore: notesStore,
-		logger:     logger,
+		notesStore:            notesStore,
+		folderContentsService: folderContentsService,
+		logger:                logger,
 	}
 }
 
@@ -90,11 +97,16 @@ func (h *NotesHandler) HandleGetNotesInFolder(c echo.Context) error {
 	}
 
 	user := c.Get("user").(*store.User)
-	notes, err := h.notesStore.GetNotesInFolder(user.ID, req.FolderID)
+	// notes, err := h.notesStore.GetNotesInFolder(user.ID, req.FolderID)
+	// if err != nil {
+	// 	h.logger.Printf("Error: creating note %v", err)
+	// 	return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
+	// }
+	folderContents, err := h.folderContentsService.GetFolderContent(user, req.FolderID)
 	if err != nil {
-		h.logger.Printf("Error: creating note %v", err)
+		h.logger.Printf("Error: getting folder content %v", err)
 		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, utils.Envelope{"notes": notes})
+	return c.JSON(http.StatusOK, folderContents)
 }
