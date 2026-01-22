@@ -23,27 +23,33 @@ func NewPostgresFoldersStore(db *sql.DB) *PostgresFoldersStore {
 }
 
 type FoldersStore interface {
-	CreateFolder(user_id int64, parent_id *int64, name string) (int64, error)
+	CreateFolder(user_id int64, parent_id int64, name string) (Folder, error)
 	CreateFolderTx(tx *sql.Tx, user_id int64, parent_id *int64, name string) (int64, error)
 	GetRootFolder(user_id int64) (int64, error)
 	UserOwnsFolder(user_id int64, folder_id int64) (bool, error)
 	GetSubFolders(user_id int64, folder_id int64) ([]Folder, error)
 }
 
-func (f *PostgresFoldersStore) CreateFolder(user_id int64, parent_id *int64, name string) (int64, error) {
+func (f *PostgresFoldersStore) CreateFolder(user_id int64, parent_id int64, name string) (Folder, error) {
 	query := `
 	INSERT INTO folders (user_id, parent_id, name)
 	VALUES ($1, $2, $3)
-	RETURNING id;
+	RETURNING id, user_id, parent_id, name, created_at, updated_at;
 	`
 
-	var folder_id int64
-	err := f.db.QueryRow(query, user_id, parent_id, name).Scan(&folder_id)
+	var folder Folder
+	err := f.db.QueryRow(query, user_id, parent_id, name).Scan(
+		&folder.ID,
+		&folder.UserID,
+		&folder.ParentID,
+		&folder.Name,
+		&folder.CreatedAt,
+		&folder.UpdatedAt)
 	if err != nil {
-		return 0, err
+		return Folder{}, err
 	}
 
-	return folder_id, nil
+	return folder, nil
 }
 
 func (f *PostgresFoldersStore) CreateFolderTx(tx *sql.Tx, user_id int64, parent_id *int64, name string) (int64, error) {
@@ -100,7 +106,7 @@ func (f *PostgresFoldersStore) GetSubFolders(user_id int64, folder_id int64) ([]
 	query := `
 	SELECT id, user_id, parent_id, name, created_at, updated_at
 	FROM folders 
-	WHERE user_id = $1 and id = $2;
+	WHERE user_id = $1 and parent_id = $2;
 	`
 
 	rows, err := f.db.Query(query, user_id, folder_id)

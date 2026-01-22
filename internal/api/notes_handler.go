@@ -64,13 +64,18 @@ func (h *NotesHandler) HandleCreateNote(c echo.Context) error {
 	}
 
 	user := c.Get("user").(*store.User)
-	note_id, err := h.notesStore.CreateNote(int64(user.ID), req.FolderID, req.Title, req.Note)
+	// note_id, err := h.notesStore.CreateNote(int64(user.ID), req.FolderID, req.Title, req.Note)
+	// if err != nil {
+	// 	h.logger.Printf("Error: creating note")
+	// 	return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
+	// }
+	note, err := h.folderContentsService.CreateNote(user, req.FolderID, req.Title, req.Note)
 	if err != nil {
 		h.logger.Printf("Error: creating note")
 		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusCreated, utils.Envelope{"note_id": note_id})
+	return c.JSON(http.StatusCreated, note)
 }
 
 type getNotesInFolderRequest struct {
@@ -97,11 +102,6 @@ func (h *NotesHandler) HandleGetNotesInFolder(c echo.Context) error {
 	}
 
 	user := c.Get("user").(*store.User)
-	// notes, err := h.notesStore.GetNotesInFolder(user.ID, req.FolderID)
-	// if err != nil {
-	// 	h.logger.Printf("Error: creating note %v", err)
-	// 	return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
-	// }
 	folderContents, err := h.folderContentsService.GetFolderContent(user, req.FolderID)
 	if err != nil {
 		h.logger.Printf("Error: getting folder content %v", err)

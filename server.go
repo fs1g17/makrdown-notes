@@ -39,4 +39,5 @@ func restricted(g *echo.Group, app *app.App) {
 	g.GET("/notes", app.NotesHandler.HandleGetNotesInFolder)
 
 	g.POST("/notes/new", app.NotesHandler.HandleCreateNote)
+	g.POST("/folders/new", app.FolderHandler.HandleCreateFolder)
 }

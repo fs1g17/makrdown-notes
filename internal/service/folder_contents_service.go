@@ -34,6 +34,8 @@ type FolderContent struct {
 
 type FolderContentsServiceI interface {
 	GetFolderContent(user *store.User, folder_id int64) (FolderContent, error)
+	CreateSubFolder(user *store.User, parent_id int64, name string) (store.Folder, error)
+	CreateNote(user *store.User, folder_id int64, title string, note string) (store.Note, error)
 }
 
 func (f *FolderContentsService) GetFolderContent(user *store.User, folder_id int64) (FolderContent, error) {
@@ -60,4 +62,40 @@ func (f *FolderContentsService) GetFolderContent(user *store.User, folder_id int
 		Notes:   notes,
 		Folders: folders,
 	}, nil
+}
+
+func (f *FolderContentsService) CreateSubFolder(user *store.User, parent_id int64, name string) (store.Folder, error) {
+	owns, err := f.folderStore.UserOwnsFolder(user.ID, parent_id)
+	if err != nil {
+		return store.Folder{}, err
+	}
+
+	if owns == false {
+		return store.Folder{}, errors.New("unauthorized")
+	}
+
+	folder, err := f.folderStore.CreateFolder(user.ID, parent_id, name)
+	if err != nil {
+		return store.Folder{}, err
+	}
+
+	return folder, nil
+}
+
+func (f *FolderContentsService) CreateNote(user *store.User, folder_id int64, title string, note string) (store.Note, error) {
+	owns, err := f.folderStore.UserOwnsFolder(user.ID, folder_id)
+	if err != nil {
+		return store.Note{}, err
+	}
+
+	if owns == false {
+		return store.Note{}, errors.New("unauthorized")
+	}
+
+	dbNote, err := f.noteStore.CreateNote(user.ID, folder_id, title, note)
+	if err != nil {
+		return store.Note{}, err
+	}
+
+	return dbNote, nil
 }

@@ -21,6 +21,7 @@ type App struct {
 	UserHandler    *api.UserHandler
 	TokenHandler   *api.TokenHandler
 	NotesHandler   *api.NotesHandler
+	FolderHandler  *api.FolderHandler
 	UserMiddleware *middleware.UserMiddleware
 }
 
@@ -51,13 +52,15 @@ func NewApp() (*App, error) {
 	userHandler := api.NewUserHandler(userStore, folderStore, registerUserSercvice, logger)
 	tokenHandler := api.NewTokenhandler(tokenStore, userStore, logger)
 	notesHandler := api.NewNotesHandler(notesStore, folderContentsService, logger)
+	folderHandler := api.NewFolderHandler(folderContentsService, logger)
 
 	app := &App{
-		Logger:       logger,
-		DB:           pgDB,
-		UserHandler:  userHandler,
-		TokenHandler: tokenHandler,
-		NotesHandler: notesHandler,
+		Logger:        logger,
+		DB:            pgDB,
+		UserHandler:   userHandler,
+		TokenHandler:  tokenHandler,
+		NotesHandler:  notesHandler,
+		FolderHandler: folderHandler,
 		UserMiddleware: &middleware.UserMiddleware{
 			UserStore: userStore,
 		},
