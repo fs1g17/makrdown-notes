@@ -57,7 +57,7 @@ func (h *TokenHandler) HandleCreateToken(c echo.Context) error {
 	user, err := h.userStore.GetUserByUsername(req.Username)
 	if err != nil || user == nil {
 		h.logger.Printf("ERROR: GetUserByUsername: %v", err)
-		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		return c.JSON(http.StatusUnauthorized, utils.Envelope{"error": "invalid credentials"})
 	}
 
 	passwordsDoMatch, err := user.PasswordHash.Matches(req.Password)
