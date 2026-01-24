@@ -23,12 +23,12 @@ func main() {
 	r := e.Group("")
 	r.Use(app.UserMiddleware.AuthMiddleware)
 
-	restricted(r)
+	restricted(r, app)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
 
-func restricted(g *echo.Group) {
+func restricted(g *echo.Group, app *app.App) {
 	g.GET("/me", func(c echo.Context) error {
 		u, ok := middleware.CurrentUser(c)
 		if !ok {
@@ -36,4 +36,8 @@ func restricted(g *echo.Group) {
 		}
 		return c.JSON(200, utils.Envelope{"username": u.Username})
 	})
+	g.GET("/folders", app.FolderHandler.GetFolderContent)
+
+	g.POST("/notes/new", app.NotesHandler.HandleCreateNote)
+	g.POST("/folders/new", app.FolderHandler.HandleCreateFolder)
 }

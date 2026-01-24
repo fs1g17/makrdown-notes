@@ -5,6 +5,7 @@ import (
 	"log"
 	"markdown-notes/internal/api"
 	"markdown-notes/internal/middleware"
+	"markdown-notes/internal/service"
 	"markdown-notes/internal/store"
 	"markdown-notes/internal/utils"
 	"markdown-notes/migrations"
@@ -19,6 +20,8 @@ type App struct {
 	DB             *sql.DB
 	UserHandler    *api.UserHandler
 	TokenHandler   *api.TokenHandler
+	NotesHandler   *api.NotesHandler
+	FolderHandler  *api.FolderHandler
 	UserMiddleware *middleware.UserMiddleware
 }
 
@@ -38,16 +41,26 @@ func NewApp() (*App, error) {
 	// our stores will go hore
 	userStore := store.NewPostgresUserStore(pgDB)
 	tokenStore := store.NewPostgresTokenStore(pgDB)
+	notesStore := store.NewPostgresNotesStore(pgDB)
+	folderStore := store.NewPostgresFoldersStore(pgDB)
+
+	// our services will go here
+	registerUserSercvice := service.NewRegisterUserService(pgDB, userStore, folderStore)
+	folderContentsService := service.NewFolderContentsService(pgDB, userStore, folderStore, notesStore)
 
 	// our handlers will go here
-	userHandler := api.NewUserHandler(userStore, logger)
+	userHandler := api.NewUserHandler(userStore, folderStore, registerUserSercvice, logger)
 	tokenHandler := api.NewTokenhandler(tokenStore, userStore, logger)
+	notesHandler := api.NewNotesHandler(notesStore, folderContentsService, logger)
+	folderHandler := api.NewFolderHandler(folderContentsService, logger)
 
 	app := &App{
-		Logger:       logger,
-		DB:           pgDB,
-		UserHandler:  userHandler,
-		TokenHandler: tokenHandler,
+		Logger:        logger,
+		DB:            pgDB,
+		UserHandler:   userHandler,
+		TokenHandler:  tokenHandler,
+		NotesHandler:  notesHandler,
+		FolderHandler: folderHandler,
 		UserMiddleware: &middleware.UserMiddleware{
 			UserStore: userStore,
 		},

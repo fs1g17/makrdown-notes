@@ -1,0 +1,22 @@
+meta {
+  name: Get folder content
+  type: http
+  seq: 6
+}
+
+get {
+  url: http://localhost:8080/folders
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "folder_id": 2
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
