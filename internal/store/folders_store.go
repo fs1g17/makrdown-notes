@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 )
 
@@ -97,6 +98,10 @@ func (f *PostgresFoldersStore) UserOwnsFolder(user_id int64, folder_id int64) (b
 	err := f.db.QueryRow(query, user_id, folder_id).Scan(&exists)
 	if err != nil {
 		return false, err
+	}
+
+	if exists == false {
+		return false, errors.New("folder doesn't exist")
 	}
 
 	return true, nil

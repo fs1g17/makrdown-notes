@@ -5,5 +5,5 @@ This is a little project for storing notes in markdown format. https://roadmap.s
 TODO:
 
 - write an endpoint for getting contents of a folder
-- put user creation+root folder into a db transaction
 - ensure users can only access their own folders & files
+- verify ownership in the notes store also

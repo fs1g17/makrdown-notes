@@ -36,7 +36,7 @@ func restricted(g *echo.Group, app *app.App) {
 		}
 		return c.JSON(200, utils.Envelope{"username": u.Username})
 	})
-	g.GET("/notes", app.NotesHandler.HandleGetNotesInFolder)
+	g.GET("/folders", app.FolderHandler.GetFolderContent)
 
 	g.POST("/notes/new", app.NotesHandler.HandleCreateNote)
 	g.POST("/folders/new", app.FolderHandler.HandleCreateFolder)

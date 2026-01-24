@@ -64,3 +64,24 @@ func (h *FolderHandler) HandleCreateFolder(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, folder)
 }
+
+func (h *FolderHandler) GetFolderContent(c echo.Context) error {
+	var req getNotesInFolderRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+	}
+
+	err := req.validate()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+	}
+
+	user := c.Get("user").(*store.User)
+	folderContents, err := h.folderContentsService.GetFolderContent(user, req.FolderID)
+	if err != nil {
+		h.logger.Printf("Error: getting folder content %v", err)
+		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, folderContents)
+}
