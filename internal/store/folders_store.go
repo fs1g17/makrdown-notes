@@ -24,14 +24,14 @@ func NewPostgresFoldersStore(db *sql.DB) *PostgresFoldersStore {
 }
 
 type FoldersStore interface {
-	CreateFolder(user_id int64, parent_id int64, name string) (Folder, error)
+	CreateFolder(user_id int64, parent_id int64, name string) (*Folder, error)
 	CreateFolderTx(tx *sql.Tx, user_id int64, parent_id *int64, name string) (int64, error)
 	GetRootFolder(user_id int64) (int64, error)
 	UserOwnsFolder(user_id int64, folder_id int64) (bool, error)
 	GetSubFolders(user_id int64, folder_id int64) ([]Folder, error)
 }
 
-func (f *PostgresFoldersStore) CreateFolder(user_id int64, parent_id int64, name string) (Folder, error) {
+func (f *PostgresFoldersStore) CreateFolder(user_id int64, parent_id int64, name string) (*Folder, error) {
 	query := `
 	INSERT INTO folders (user_id, parent_id, name)
 	VALUES ($1, $2, $3)
@@ -47,10 +47,10 @@ func (f *PostgresFoldersStore) CreateFolder(user_id int64, parent_id int64, name
 		&folder.CreatedAt,
 		&folder.UpdatedAt)
 	if err != nil {
-		return Folder{}, err
+		return nil, err
 	}
 
-	return folder, nil
+	return &folder, nil
 }
 
 func (f *PostgresFoldersStore) CreateFolderTx(tx *sql.Tx, user_id int64, parent_id *int64, name string) (int64, error) {

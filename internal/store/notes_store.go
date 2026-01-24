@@ -23,11 +23,11 @@ func NewPostgresNotesStore(db *sql.DB) *PostgresNotesStore {
 }
 
 type NotesStore interface {
-	CreateNote(user_id int64, folder_id int64, title string, note string) (Note, error)
+	CreateNote(user_id int64, folder_id int64, title string, note string) (*Note, error)
 	GetNotesInFolder(user_id int64, folder_id int64) ([]Note, error)
 }
 
-func (n *PostgresNotesStore) CreateNote(user_id int64, folder_id int64, title string, note string) (Note, error) {
+func (n *PostgresNotesStore) CreateNote(user_id int64, folder_id int64, title string, note string) (*Note, error) {
 	query := `
 	INSERT INTO notes (user_id, folder_id, title, note)
 	VALUES ($1, $2, $3, $4)
@@ -38,12 +38,16 @@ func (n *PostgresNotesStore) CreateNote(user_id int64, folder_id int64, title st
 	err := n.db.QueryRow(query, user_id, folder_id, title, note).Scan(
 		&dbNote.ID,
 		&dbNote.FolderID,
+		&dbNote.Title,
+		&dbNote.Note,
+		&dbNote.CreatedAt,
+		&dbNote.UpdatedAt,
 	)
 	if err != nil {
-		return Note{}, err
+		return nil, err
 	}
 
-	return dbNote, nil
+	return &dbNote, nil
 }
 
 func (n *PostgresNotesStore) GetNotesInFolder(user_id int64, folder_id int64) ([]Note, error) {
