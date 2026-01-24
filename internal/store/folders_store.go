@@ -101,7 +101,7 @@ func (f *PostgresFoldersStore) UserOwnsFolder(user_id int64, folder_id int64) (b
 	}
 
 	if exists == false {
-		return false, errors.New("folder doesn't exist")
+		return false, errors.New("folder doesn't exist or you don't have access to it")
 	}
 
 	return true, nil
