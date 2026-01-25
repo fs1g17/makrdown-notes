@@ -3,6 +3,8 @@ package middleware
 import (
 	"markdown-notes/internal/store"
 	"markdown-notes/internal/tokens"
+	"markdown-notes/internal/utils"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -15,13 +17,16 @@ func (um *UserMiddleware) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc
 	return func(c echo.Context) error {
 		cookie, err := c.Cookie("auth_token")
 		if err != nil {
-			return err
+			if err == http.ErrNoCookie {
+				return echo.NewHTTPError(http.StatusUnauthorized, utils.Envelope{"error": "missing auth token"})
+			}
+			return echo.NewHTTPError(http.StatusBadRequest, utils.Envelope{"error": "invalid cookie"})
 		}
 
 		token := cookie.Value
 		user, err := um.UserStore.GetUserToken(tokens.ScopeAuth, token)
 		if err != nil || user == nil {
-			return echo.NewHTTPError(401, "invalid or expired token")
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired token")
 		}
 
 		c.Set("user", user)
