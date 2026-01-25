@@ -65,3 +65,16 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 }
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths EXCEPT for the ones starting with:
+     * - web/api (API routes)
+     * - web/_next/static (static files)
+     * - web/_next/image (image optimization files)
+     * Also excludes all paths ending with .png
+     */
+    "/((?!api|_next/image|favicon.ico|.*\\.png$).*)",
+  ],
+};
