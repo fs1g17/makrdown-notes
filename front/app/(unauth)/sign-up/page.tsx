@@ -16,6 +16,8 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import Link from "next/link";
+import clientFetch from "@/lib/client-side-fetching";
+import { useMutation } from "@tanstack/react-query";
 
 const schema = z.object({
   username: z
@@ -43,18 +45,39 @@ export default function SignUp() {
     }
   });
 
+  const { mutate: register } = useMutation({
+    mutationFn: ({
+      username,
+      email,
+      password,
+    }: {
+      username: string;
+      email: string;
+      password: string;
+    }) =>
+      clientFetch.post("/api/user/register", {
+        username,
+        email,
+        password,
+      }),
+    onSuccess: () => {
+      console.log("Registration successful");
+    },
+    onError: () => {
+      console.log("Registration failed");
+    },
+  });
+
   const handleSubmit = ({
     username,
     email,
     password,
-    confirmPassword,
   }: {
     username: string;
     email: string;
     password: string;
-    confirmPassword: string;
   }) => {
-    console.log("stuff");
+    register({ username, email, password });
   }
 
   return (

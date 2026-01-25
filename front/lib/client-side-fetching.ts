@@ -2,9 +2,7 @@
 
 import axios from "axios";
 
-const clientFetch = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_BASE_URL,
-});
+const clientFetch = axios.create({});
 
 clientFetch.interceptors.response.use(
   (response) => {
