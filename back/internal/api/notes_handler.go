@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"errors"
 	"log"
 	"markdown-notes/internal/service"
@@ -71,4 +72,41 @@ func (h *NotesHandler) HandleCreateNote(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, note)
+}
+
+type getNoteRequest struct {
+	NoteID int64 `param:"note_id"`
+}
+
+func (r *getNoteRequest) validate() error {
+	if r.NoteID == 0 {
+		return errors.New("note_id is required")
+	}
+
+	return nil
+}
+
+func (h *NotesHandler) HandleGetNote(c echo.Context) error {
+	var req getNoteRequest
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+	}
+
+	err := req.validate()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+	}
+
+	user := c.Get("user").(*store.User)
+	note, err := h.notesStore.GetNote(user.ID, req.NoteID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			h.logger.Printf("ERROR: user trying to access note %v", err)
+			return c.JSON(http.StatusUnauthorized, utils.Envelope{"error": "note doesn't exist or you don't have access to it"})
+		}
+		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+	}
+
+	return c.JSON(http.StatusOK, note)
 }
