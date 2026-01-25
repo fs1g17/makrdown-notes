@@ -28,9 +28,12 @@ function FolderItem({ folder, onClick }: { folder: Folder; onClick: () => void }
   );
 }
 
-function NoteItem({ note }: { note: Note }) {
+function NoteItem({ note, onClick }: { note: Note; onClick: () => void }) {
   return (
-    <div className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent">
+    <div
+      onClick={onClick}
+      className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent"
+    >
       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
         <FileText className="h-5 w-5 text-gray-600 dark:text-gray-400" />
       </div>
@@ -75,6 +78,10 @@ export default function Folders() {
     router.push(`/folders/${folderId}`);
   };
 
+  const handleNoteClick = (noteId: number) => {
+    router.push(`/notes/${noteId}`);
+  };
+
   return (
     <div className="min-h-screen p-6">
       <div className="mx-auto max-w-6xl">
@@ -114,7 +121,11 @@ export default function Folders() {
                 </h2>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {notes.map((note) => (
-                    <NoteItem key={note.id} note={note} />
+                    <NoteItem
+                      key={note.id}
+                      note={note}
+                      onClick={() => handleNoteClick(note.id)}
+                    />
                   ))}
                 </div>
               </section>

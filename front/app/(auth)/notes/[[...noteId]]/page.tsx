@@ -1,0 +1,96 @@
+"use client";
+
+import { Note } from "@/types/notes";
+import { useQuery } from "@tanstack/react-query";
+import clientFetch from "@/lib/client-side-fetching";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, FileText, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+async function getNote(noteId: number | undefined): Promise<Note | undefined> {
+  if (!noteId) return;
+  const result = await clientFetch.get<Note>(`/api/notes/${noteId}`);
+  return result.data;
+}
+
+export default function NoteEditor() {
+  const router = useRouter();
+  const params = useParams<{ noteId?: string[] }>();
+  const noteId = params.noteId?.[0] ? Number(params.noteId[0]) : undefined;
+
+  const { data: note, isPending, isError } = useQuery({
+    queryKey: ["notes", { noteId }],
+    queryFn: () => getNote(noteId),
+    enabled: !!noteId,
+  });
+
+  if (!noteId) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <FileText className="mx-auto mb-4 h-16 w-16 text-muted-foreground/50" />
+          <p className="text-lg font-medium text-muted-foreground">No note selected</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError || !note) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-medium text-destructive">Failed to load note</p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Go back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen p-6">
+      <div className="mx-auto max-w-4xl">
+        {/* Header */}
+        <div className="mb-6 flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">{note.title}</h1>
+            <p className="text-sm text-muted-foreground">
+              Last updated: {new Date(note.updated_at).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Editor */}
+        <div className="rounded-lg border border-border bg-card">
+          <textarea
+            value={note.note}
+            readOnly
+            className="min-h-[calc(100vh-250px)] w-full resize-none bg-transparent p-6 font-mono text-sm leading-relaxed focus:outline-none"
+            placeholder="No content"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
