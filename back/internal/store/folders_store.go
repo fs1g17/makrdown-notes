@@ -72,8 +72,9 @@ func (f *PostgresFoldersStore) CreateFolderTx(tx *sql.Tx, user_id int64, parent_
 func (f *PostgresFoldersStore) GetRootFolder(user_id int64) (int64, error) {
 	query := `
 	SELECT id 
-	FROM folders 
-	WHERE user_id = $1;
+	FROM folders
+	WHERE user_id = $1
+		AND parent_id IS NULL;
 	`
 
 	var folder_id int64

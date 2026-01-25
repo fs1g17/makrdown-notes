@@ -52,7 +52,7 @@ func NewApp() (*App, error) {
 	userHandler := api.NewUserHandler(userStore, folderStore, registerUserSercvice, logger)
 	tokenHandler := api.NewTokenhandler(tokenStore, userStore, logger)
 	notesHandler := api.NewNotesHandler(notesStore, folderContentsService, logger)
-	folderHandler := api.NewFolderHandler(folderContentsService, logger)
+	folderHandler := api.NewFolderHandler(folderContentsService, folderStore, logger)
 
 	app := &App{
 		Logger:        logger,

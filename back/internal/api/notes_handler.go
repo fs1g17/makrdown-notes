@@ -72,15 +72,3 @@ func (h *NotesHandler) HandleCreateNote(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, note)
 }
-
-type getNotesInFolderRequest struct {
-	FolderID int64 `json:"folder_id"`
-}
-
-func (r *getNotesInFolderRequest) validate() error {
-	if r.FolderID == 0 {
-		return errors.New("folder_id is required")
-	}
-
-	return nil
-}

@@ -28,8 +28,9 @@ func NewFolderContentsService(
 }
 
 type FolderContent struct {
-	Notes   []store.Note   `json:"notes"`
-	Folders []store.Folder `json:"folders"`
+	FolderID int64          `json:"folder_id"`
+	Notes    []store.Note   `json:"notes"`
+	Folders  []store.Folder `json:"folders"`
 }
 
 type FolderContentsServiceI interface {
@@ -59,8 +60,9 @@ func (f *FolderContentsService) GetFolderContent(user *store.User, folder_id int
 	}
 
 	return &FolderContent{
-		Notes:   notes,
-		Folders: folders,
+		FolderID: folder_id,
+		Notes:    notes,
+		Folders:  folders,
 	}, nil
 }
 
