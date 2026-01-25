@@ -25,6 +25,7 @@ func NewPostgresNotesStore(db *sql.DB) *PostgresNotesStore {
 type NotesStore interface {
 	CreateNote(user_id int64, folder_id int64, title string, note string) (*Note, error)
 	GetNotesInFolder(user_id int64, folder_id int64) ([]Note, error)
+	GetNote(user_id int64, note_id int64) (*Note, error)
 }
 
 func (n *PostgresNotesStore) CreateNote(user_id int64, folder_id int64, title string, note string) (*Note, error) {
@@ -83,4 +84,27 @@ func (n *PostgresNotesStore) GetNotesInFolder(user_id int64, folder_id int64) ([
 	}
 
 	return notes, nil
+}
+
+func (n *PostgresNotesStore) GetNote(user_id int64, note_id int64) (*Note, error) {
+	query := `
+	SELECT id, folder_id, title, note, created_at, updated_at 
+	FROM notes 
+	WHERE user_id = $1 AND id = $2;
+	`
+
+	var dbNote Note
+	err := n.db.QueryRow(query, user_id, note_id).Scan(
+		&dbNote.ID,
+		&dbNote.FolderID,
+		&dbNote.Title,
+		&dbNote.Note,
+		&dbNote.CreatedAt,
+		&dbNote.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dbNote, nil
 }
