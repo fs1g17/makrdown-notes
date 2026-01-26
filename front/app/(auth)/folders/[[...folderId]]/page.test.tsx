@@ -129,5 +129,24 @@ describe("/folders page", () => {
 
     await userEvent.click(subfolder)
     expect(pushMock).toHaveBeenCalledWith(`/folders/${rootFolderContentMock.folders[0].id}`);
-  })
+  });
+
+  it("should navigate to the note when clicked", async () => {
+    mockUseParams.mockReturnValue({ folderId: undefined });
+    const pushMock = jest.fn();
+    mockUseRouter.mockReturnValue({ push: pushMock });
+    nock("http://localhost").get("/api/folders").reply(200, rootFolderContentMock);
+
+    render(
+      <QueryClientProvider>
+        <Folders />
+      </QueryClientProvider>
+    );
+
+    const note = await screen.findByText(rootFolderContentMock.notes[0].title);
+    expect(note).toBeVisible();
+
+    await userEvent.click(note);
+    expect(pushMock).toHaveBeenCalledWith(`/notes/${rootFolderContentMock.notes[0].id}`);
+  });
 });
