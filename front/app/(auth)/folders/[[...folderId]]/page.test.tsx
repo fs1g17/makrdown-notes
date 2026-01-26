@@ -2,10 +2,10 @@ import { Note } from "@/types/notes";
 import { Folder, FolderContent } from '@/types/folders';
 import userEvent from '@testing-library/user-event'
 import { FolderItem } from './_components/FolderItem';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import { renderHook, waitFor } from "@testing-library/react";
 import Folders from "./page";
-import { QueryClientProvider } from "@/lib/react-query-testing";
+import { queryClient, QueryClientProvider } from "@/lib/react-query-testing";
 import { useParams, useRouter } from 'next/navigation'
 import nock from 'nock'
 
@@ -50,6 +50,7 @@ describe("/folders page", () => {
   beforeEach(() => {
     mockUseRouter.mockReturnValue({ push: jest.fn() });
     nock.cleanAll();
+    queryClient.clear();
   });
 
   it("should display the folder and notes content when present", async () => {
@@ -69,7 +70,7 @@ describe("/folders page", () => {
     expect(notesElement).toBeVisible();
   });
 
-  it("should display no files yet in empty folder", async () => {
+  it("should display 'no files yet' in empty folder", async () => {
     mockUseParams.mockReturnValue({ folderId: ["2"] });
     nock("http://localhost").get("/api/folders/2").reply(200, subFolderContentMock);
 
@@ -81,5 +82,20 @@ describe("/folders page", () => {
 
     const emptyElement = await screen.findByText("No files yet");
     expect(emptyElement).toBeVisible();
+  });
+
+  it("should display loading spinner during fetch", async () => {
+    mockUseParams.mockReturnValue({ folderId: ["2"] });
+    nock("http://localhost").get("/api/folders/2").delay(100).reply(200, subFolderContentMock);
+
+    render(
+      <QueryClientProvider>
+        <Folders />
+      </QueryClientProvider>
+    );
+
+    const loadingSpinner = screen.getByRole("status");
+    expect(loadingSpinner).toBeVisible();
+    waitForElementToBeRemoved(() => screen.getByRole("status"));
   });
 });
