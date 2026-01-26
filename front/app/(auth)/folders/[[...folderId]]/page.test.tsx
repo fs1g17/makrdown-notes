@@ -1,13 +1,10 @@
-import { Note } from "@/types/notes";
-import { Folder, FolderContent } from '@/types/folders';
-import userEvent from '@testing-library/user-event'
-import { FolderItem } from './_components/FolderItem';
-import { act, render, screen, waitForElementToBeRemoved } from '@testing-library/react';
-import { renderHook, waitFor } from "@testing-library/react";
-import Folders from "./page";
-import { queryClient, QueryClientProvider } from "@/lib/react-query-testing";
-import { useParams, useRouter } from 'next/navigation'
 import nock from 'nock'
+import Folders from "./page";
+import { FolderContent } from '@/types/folders';
+import userEvent from '@testing-library/user-event';
+import { useParams, useRouter } from 'next/navigation';
+import { queryClient, QueryClientProvider } from "@/lib/react-query-testing";
+import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 
 const mockUseParams = useParams as jest.Mock
 const mockUseRouter = useRouter as jest.Mock
@@ -84,8 +81,8 @@ describe("/folders page", () => {
   });
 
   it("should display loading spinner during fetch", async () => {
-    mockUseParams.mockReturnValue({ folderId: ["2"] });
-    nock("http://localhost").get("/api/folders/2").delay(100).reply(200, subFolderContentMock);
+    mockUseParams.mockReturnValue({ folderId: ["1"] });
+    nock("http://localhost").get("/api/folders/1").delay(100).reply(200, rootFolderContentMock);
 
     render(
       <QueryClientProvider>
@@ -95,12 +92,13 @@ describe("/folders page", () => {
 
     const loadingSpinner = screen.getByRole("status");
     expect(loadingSpinner).toBeVisible();
-    waitForElementToBeRemoved(() => screen.getByRole("status"));
+    await waitForElementToBeRemoved(() => screen.getByRole("status"));
+    expect(screen.getByText("Folders")).toBeVisible();
   });
 
   it("should display error", async () => {
     mockUseParams.mockReturnValue({ folderId: ["2"] });
-    nock("http://localhost").get("/api/folders/2").delay(100).reply(200, errorMock);
+    nock("http://localhost").get("/api/folders/2").delay(100).reply(500, errorMock);
 
     render(
       <QueryClientProvider>
