@@ -8,7 +8,6 @@ import Folders from "./page";
 import { QueryClientProvider } from "@/lib/react-query-testing";
 import { useParams, useRouter } from 'next/navigation'
 import nock from 'nock'
-import mockApi from "@/lib/nock-setup";
 
 const mockUseParams = useParams as jest.Mock
 const mockUseRouter = useRouter as jest.Mock
@@ -53,9 +52,9 @@ describe("/folders page", () => {
     nock.cleanAll();
   });
 
-  it("should display the root folder content", async () => {
+  it("should display the folder and notes content when present", async () => {
     mockUseParams.mockReturnValue({ folderId: undefined });
-    mockApi.get("/api/folders").reply(200, rootFolderContentMock);
+    nock("http://localhost").get("/api/folders").reply(200, rootFolderContentMock);
 
     render(
       <QueryClientProvider>
@@ -68,5 +67,19 @@ describe("/folders page", () => {
 
     const notesElement = await screen.findByText("Notes");
     expect(notesElement).toBeVisible();
+  });
+
+  it("should display no files yet in empty folder", async () => {
+    mockUseParams.mockReturnValue({ folderId: ["2"] });
+    nock("http://localhost").get("/api/folders/2").reply(200, subFolderContentMock);
+
+    render(
+      <QueryClientProvider>
+        <Folders />
+      </QueryClientProvider>
+    );
+
+    const emptyElement = await screen.findByText("No files yet");
+    expect(emptyElement).toBeVisible();
   });
 });
