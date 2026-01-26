@@ -98,4 +98,18 @@ describe("/folders page", () => {
     expect(loadingSpinner).toBeVisible();
     waitForElementToBeRemoved(() => screen.getByRole("status"));
   });
+
+  it("should display error", async () => {
+    mockUseParams.mockReturnValue({ folderId: ["2"] });
+    nock("http://localhost").get("/api/folders/2").delay(100).reply(200, errorMock);
+
+    render(
+      <QueryClientProvider>
+        <Folders />
+      </QueryClientProvider>
+    );
+
+    const errorMessage = await screen.findByText("Failed to load folders");
+    expect(errorMessage).toBeVisible();
+  })
 });

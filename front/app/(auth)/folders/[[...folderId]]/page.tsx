@@ -34,7 +34,7 @@ export default function Folders() {
 
   if (isError) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div role="status" aria-label="Failed to load folders" className="flex min-h-screen items-center justify-center">
         <p className="text-destructive">Failed to load folders</p>
       </div>
     );
