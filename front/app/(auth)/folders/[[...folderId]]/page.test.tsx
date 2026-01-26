@@ -2,7 +2,7 @@ import { Note } from "@/types/notes";
 import { Folder, FolderContent } from '@/types/folders';
 import userEvent from '@testing-library/user-event'
 import { FolderItem } from './_components/FolderItem';
-import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
+import { act, render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import { renderHook, waitFor } from "@testing-library/react";
 import Folders from "./page";
 import { queryClient, QueryClientProvider } from "@/lib/react-query-testing";
@@ -48,7 +48,6 @@ const errorMock = {
 
 describe("/folders page", () => {
   beforeEach(() => {
-    mockUseRouter.mockReturnValue({ push: jest.fn() });
     nock.cleanAll();
     queryClient.clear();
   });
@@ -111,5 +110,24 @@ describe("/folders page", () => {
 
     const errorMessage = await screen.findByText("Failed to load folders");
     expect(errorMessage).toBeVisible();
+  })
+
+  it("should navigate to subfolder when clicked", async () => {
+    mockUseParams.mockReturnValue({ folderId: undefined });
+    const pushMock = jest.fn();
+    mockUseRouter.mockReturnValue({ push: pushMock });
+    nock("http://localhost").get("/api/folders").reply(200, rootFolderContentMock);
+
+    render(
+      <QueryClientProvider>
+        <Folders />
+      </QueryClientProvider>
+    );
+
+    const subfolder = await screen.findByText(rootFolderContentMock.folders[0].name);
+    expect(subfolder).toBeVisible();
+
+    await userEvent.click(subfolder)
+    expect(pushMock).toHaveBeenCalledWith(`/folders/${rootFolderContentMock.folders[0].id}`);
   })
 });
