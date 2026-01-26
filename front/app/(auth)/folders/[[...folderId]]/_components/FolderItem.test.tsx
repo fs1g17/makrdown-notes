@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import '@testing-library/jest-dom'
 import { FolderItem } from './FolderItem';
 import { Folder } from '@/types/folders';
 
@@ -25,7 +24,7 @@ describe("Folder items", () => {
     const element = screen.getByText(mockFolder.name);
     expect(element).toBeVisible();
   });
-  
+
   it("should execute the callback on click", async () => {
     const mockCallback = jest.fn()
     render(
