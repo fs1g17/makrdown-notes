@@ -92,7 +92,7 @@ export function CreateNoteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Create a note</DialogTitle>
         </DialogHeader>
