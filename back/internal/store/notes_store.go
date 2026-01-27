@@ -2,8 +2,13 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"time"
+
+	"github.com/jackc/pgconn"
 )
+
+var ErrDuplicateNote = errors.New("note with this title already exists in this folder")
 
 type Note struct {
 	ID        int64     `json:"id"`
@@ -45,6 +50,12 @@ func (n *PostgresNotesStore) CreateNote(user_id int64, folder_id int64, title st
 		&dbNote.UpdatedAt,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				return nil, ErrDuplicateNote
+			}
+		}
 		return nil, err
 	}
 
