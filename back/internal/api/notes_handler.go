@@ -41,14 +41,6 @@ func (r *createNoteRequest) validate() error {
 		return errors.New("title is required")
 	}
 
-	if r.Note == "" {
-		return errors.New("note is required")
-	}
-
-	if r.FolderID == 0 {
-		return errors.New("folder_id is required")
-	}
-
 	return nil
 }
 

@@ -85,16 +85,28 @@ func (f *FolderContentsService) CreateSubFolder(user *store.User, parent_id int6
 }
 
 func (f *FolderContentsService) CreateNote(user *store.User, folder_id int64, title string, note string) (*store.Note, error) {
-	owns, err := f.folderStore.UserOwnsFolder(user.ID, folder_id)
-	if err != nil {
-		return nil, err
+	var use_folder_id int64
+	if folder_id == 0 {
+		// if folder_id is 0, get root folder id
+		root_folder_id, err := f.folderStore.GetRootFolder(user.ID)
+		if err != nil {
+			return nil, err
+		}
+		use_folder_id = root_folder_id
+	} else {
+		// otherwise check if folder belongs to the user
+		use_folder_id = folder_id
+		owns, err := f.folderStore.UserOwnsFolder(user.ID, folder_id)
+		if err != nil {
+			return nil, err
+		}
+
+		if owns == false {
+			return nil, errors.New("unauthorized")
+		}
 	}
 
-	if owns == false {
-		return nil, errors.New("unauthorized")
-	}
-
-	dbNote, err := f.noteStore.CreateNote(user.ID, folder_id, title, note)
+	dbNote, err := f.noteStore.CreateNote(user.ID, use_folder_id, title, note)
 	if err != nil {
 		return nil, err
 	}

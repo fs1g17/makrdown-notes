@@ -7,6 +7,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Folder as FolderIcon, Loader2 } from "lucide-react";
 import { FolderItem } from "./_components/FolderItem";
 import { NoteItem } from "./_components/NoteItem";
+import { CreateNote } from "./_components/CreateNote";
+import { useMemo } from "react";
 
 async function getFolderContent(folderId: number | undefined): Promise<FolderContent> {
   const response = await clientFetch.get<FolderContent>(`/api/folders${folderId ? `/${folderId}` : ""}`);
@@ -18,8 +20,10 @@ export default function Folders() {
   const params = useParams<{ folderId?: string[] }>();
   const folderId = params.folderId?.[0] ? Number(params.folderId[0]) : undefined;
 
+  const queryKey = useMemo(() => ["folders", { folderId: folderId ?? "root" }], [folderId]);
+
   const { data, isPending, isError } = useQuery({
-    queryKey: ["folders", { folderId: folderId ?? "root" }],
+    queryKey,
     queryFn: () => getFolderContent(folderId),
   });
 
@@ -54,6 +58,7 @@ export default function Folders() {
 
   return (
     <div className="min-h-screen p-6">
+      <CreateNote folderId={folderId} folderQueryKey={queryKey} />
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-6 text-2xl font-bold">My Files</h1>
 
