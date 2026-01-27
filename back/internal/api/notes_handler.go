@@ -12,6 +12,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func httpStatusFromErr(err error) int {
+	switch {
+	case errors.Is(err, store.ErrDuplicateNote):
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
 type NotesHandler struct {
 	notesStore            store.NotesStore
 	folderContentsService service.FolderContentsServiceI
@@ -41,14 +50,6 @@ func (r *createNoteRequest) validate() error {
 		return errors.New("title is required")
 	}
 
-	if r.Note == "" {
-		return errors.New("note is required")
-	}
-
-	if r.FolderID == 0 {
-		return errors.New("folder_id is required")
-	}
-
 	return nil
 }
 
@@ -67,8 +68,8 @@ func (h *NotesHandler) HandleCreateNote(c echo.Context) error {
 	user := c.Get("user").(*store.User)
 	note, err := h.folderContentsService.CreateNote(user, req.FolderID, req.Title, req.Note)
 	if err != nil {
-		h.logger.Printf("Error: creating note")
-		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
+		h.logger.Printf("Error creating note: %v", err)
+		return c.JSON(httpStatusFromErr(err), utils.Envelope{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusCreated, note)
