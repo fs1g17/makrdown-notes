@@ -38,4 +38,23 @@ describe("Create content button", () => {
 
     expect(folderCallback).toHaveBeenCalled();
   });
+
+  it("should execute note callback when note is clicked", async () => {
+    const noteCallback = jest.fn();
+
+    render(
+      <CreateContentButton
+        onCreateFolderClick={() => { }}
+        onCreateNoteClick={noteCallback}
+      />
+    );
+
+    const button = screen.getByLabelText("Add new item");
+    await userEvent.click(button);
+
+    const note = screen.getByText("Note");
+    await userEvent.click(note);
+
+    expect(noteCallback).toHaveBeenCalled();
+  });
 })
