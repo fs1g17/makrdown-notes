@@ -33,8 +33,17 @@ const schema = z.object({
     .min(1, { message: "Input a note title" }),
 });
 
-export function CreateNote({ folderId, onClick, folderQueryKey }: { folderId: number | undefined, onClick?: () => void, folderQueryKey: unknown[] }) {
-  const [open, setOpen] = useState(false);
+export function CreateNoteDialog({
+  folderId,
+  folderQueryKey,
+  open,
+  onClose
+}: {
+  folderId: number | undefined,
+  folderQueryKey: unknown[],
+  open: boolean;
+  onClose: () => void;
+}) {
   const queryClient = useQueryClient();
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -69,7 +78,7 @@ export function CreateNote({ folderId, onClick, folderQueryKey }: { folderId: nu
       queryClient.invalidateQueries({
         queryKey: folderQueryKey
       });
-      setOpen(false);
+      onClose();
     },
   })
 
@@ -82,16 +91,7 @@ export function CreateNote({ folderId, onClick, folderQueryKey }: { folderId: nu
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          onClick={onClick}
-          className="fixed bottom-6 right-6 h-12 w-12 rounded-full p-0 shadow-lg hover:shadow-xl transition-shadow"
-          aria-label="Add new item"
-        >
-          <Plus className="h-7 w-7" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create a note</DialogTitle>
