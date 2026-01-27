@@ -20,5 +20,22 @@ describe("Create content button", () => {
     expect(screen.getByText("Folder")).toBeVisible();
   });
 
+  it("should execute folder callback when folder is clicked", async () => {
+    const folderCallback = jest.fn();
 
+    render(
+      <CreateContentButton
+        onCreateFolderClick={folderCallback}
+        onCreateNoteClick={() => { }}
+      />
+    );
+
+    const button = screen.getByLabelText("Add new item");
+    await userEvent.click(button);
+
+    const folder = screen.getByText("Folder");
+    await userEvent.click(folder);
+
+    expect(folderCallback).toHaveBeenCalled();
+  });
 })
