@@ -91,5 +91,42 @@ describe("Create note dialog", () => {
       expect(onCloseMock).toHaveBeenCalled();
     });
     expect(screen.getByText("Success creating note")).toBeVisible();
-  })
+  });
+
+  it("should display spinner during request execution", async () => {
+    nock("http://localhost")
+      .post(
+        "/api/notes/new",
+        {
+          title: "title",
+          note: "",
+          folder_id: undefined
+        }
+      )
+      .delay(100)
+      .reply(201, createNoteMock);
+    const onCloseMock = jest.fn();
+
+    render(
+      <QueryClientProvider>
+        <CreateNoteDialog
+          folderId={undefined}
+          folderQueryKey={["folders", { folderId: 1 }]}
+          open={true}
+          onClose={onCloseMock}
+        />
+        <Toaster />
+      </QueryClientProvider>
+    );
+
+    const input = screen.getByLabelText("Title");
+    await userEvent.type(input, "title");
+
+    const createNoteButton = screen.getByText("Create Note");
+    expect(createNoteButton).toHaveAttribute("aria-busy", "false");
+    await userEvent.click(createNoteButton);
+
+    expect(createNoteButton).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByLabelText("Loading")).toBeVisible();
+  });
 })

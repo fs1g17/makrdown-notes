@@ -120,7 +120,7 @@ export function CreateNoteDialog({
 
             <Field>
               <Button type="submit" className="w-full" aria-busy={isPending} disabled={isPending}>
-                {isPending ? <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /> : "Create Note"}
+                {isPending ? <Loader2 aria-label="Loading" className="h-8 w-8 animate-spin text-muted-foreground" /> : "Create Note"}
               </Button>
             </Field>
           </FieldGroup>
