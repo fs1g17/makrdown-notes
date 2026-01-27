@@ -15,6 +15,10 @@ const createNoteMock: CreateNoteResponse = {
   "updated_at": "2026-01-27T17:06:22.00707+04:00"
 }
 
+const errorNoteMock = {
+  error: "note with this title already exists in this folder"
+}
+
 describe("Create note dialog", () => {
   beforeEach(() => {
     nock.cleanAll();
@@ -91,6 +95,43 @@ describe("Create note dialog", () => {
       expect(onCloseMock).toHaveBeenCalled();
     });
     expect(screen.getByText("Success creating note")).toBeVisible();
+  });
+
+  it("should display error toast and close the dialog when a note is failed to be created", async () => {
+    nock("http://localhost")
+      .post(
+        "/api/notes/new",
+        {
+          title: "title",
+          note: "",
+          folder_id: undefined
+        }
+      )
+      .reply(409, errorNoteMock);
+    const onCloseMock = jest.fn();
+
+    render(
+      <QueryClientProvider>
+        <CreateNoteDialog
+          folderId={undefined}
+          folderQueryKey={["folders", { folderId: 1 }]}
+          open={true}
+          onClose={onCloseMock}
+        />
+        <Toaster />
+      </QueryClientProvider>
+    );
+
+    const input = screen.getByLabelText("Title");
+    await userEvent.type(input, "title");
+
+    const createNoteButton = screen.getByText("Create Note");
+    await userEvent.click(createNoteButton);
+
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalled();
+    });
+    expect(screen.getByText("Error creating note")).toBeVisible();
   });
 
   it("should display spinner during request execution", async () => {
