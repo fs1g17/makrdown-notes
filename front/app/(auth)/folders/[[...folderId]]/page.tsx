@@ -1,47 +1,16 @@
 "use client";
 
 import clientFetch from "@/lib/client-side-fetching";
-import { Folder, FolderContent } from "@/types/folders";
-import { Note } from "@/types/notes";
+import { FolderContent } from "@/types/folders";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { Folder as FolderIcon, FileText, Loader2 } from "lucide-react";
+import { Folder as FolderIcon, Loader2 } from "lucide-react";
+import { FolderItem } from "./_components/FolderItem";
+import { NoteItem } from "./_components/NoteItem";
 
 async function getFolderContent(folderId: number | undefined): Promise<FolderContent> {
   const response = await clientFetch.get<FolderContent>(`/api/folders${folderId ? `/${folderId}` : ""}`);
   return response.data;
-}
-
-function FolderItem({ folder, onClick }: { folder: Folder; onClick: () => void }) {
-  return (
-    <div
-      onClick={onClick}
-      className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent"
-    >
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-        <FolderIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-      </div>
-      <div className="flex-1 overflow-hidden">
-        <p className="truncate font-medium">{folder.name}</p>
-      </div>
-    </div>
-  );
-}
-
-function NoteItem({ note, onClick }: { note: Note; onClick: () => void }) {
-  return (
-    <div
-      onClick={onClick}
-      className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent"
-    >
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
-        <FileText className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-      </div>
-      <div className="flex-1 overflow-hidden">
-        <p className="truncate font-medium">{note.title}</p>
-      </div>
-    </div>
-  );
 }
 
 export default function Folders() {
@@ -56,15 +25,16 @@ export default function Folders() {
 
   if (isPending) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div role="status" aria-label="Loading folders" className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span>Loading folders...</span>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div role="status" aria-label="Failed to load folders" className="flex min-h-screen items-center justify-center">
         <p className="text-destructive">Failed to load folders</p>
       </div>
     );
