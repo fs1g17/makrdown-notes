@@ -132,6 +132,7 @@ describe("Create note dialog", () => {
       expect(onCloseMock).toHaveBeenCalled();
     });
     expect(screen.getByText("Error creating note")).toBeVisible();
+    expect(screen.getByText(errorNoteMock.error)).toBeVisible();
   });
 
   it("should display spinner during request execution", async () => {
