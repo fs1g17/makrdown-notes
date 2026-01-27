@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import z from "zod";
 import {
   Field,
@@ -15,6 +14,8 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import { toast } from "sonner"
+import { useState } from "react";
 import { Loader2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import clientFetch from "@/lib/client-side-fetching";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import { parseErrorMessage } from "@/lib/utils";
 
 const schema = z.object({
   title: z
@@ -51,6 +54,17 @@ export function CreateNote({ folderId, onClick, folderQueryKey }: { folderId: nu
         note: "",
         folder_id: folderId
       }),
+    onError: (e) => {
+      const errorMessage = parseErrorMessage(e);
+      toast.error("Error creating note", {
+        description: errorMessage
+      });
+    },
+    onSuccess: () => {
+      toast.success("Success creating note", {
+        description: "Note created successfully"
+      });
+    },
     onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: folderQueryKey
