@@ -25,6 +25,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { parseErrorMessage } from "@/lib/utils";
+import { CreateNoteResponse } from "@/types/notes";
 
 const schema = z.object({
   title: z
@@ -58,7 +59,7 @@ export function CreateNoteDialog({
     }: {
       title: string;
     }) =>
-      clientFetch.post("/api/notes/new", {
+      clientFetch.post<CreateNoteResponse>("/api/notes/new", {
         title,
         note: "",
         folder_id: folderId
