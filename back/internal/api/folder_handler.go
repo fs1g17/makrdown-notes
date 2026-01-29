@@ -11,6 +11,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func httpStatusFromFolderError(err error) int {
+	switch {
+	case errors.Is(err, store.ErrDuplicateFolder):
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
 type FolderHandler struct {
 	folderContentsService service.FolderContentsServiceI
 	folderStore           store.FoldersStore
@@ -62,7 +71,7 @@ func (h *FolderHandler) HandleCreateFolder(c echo.Context) error {
 	folder, err := h.folderContentsService.CreateSubFolder(user, req.ParentID, req.Name)
 	if err != nil {
 		h.logger.Printf("Error creating folder: %v", err)
-		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
+		return c.JSON(httpStatusFromFolderError(err), utils.Envelope{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusCreated, folder)

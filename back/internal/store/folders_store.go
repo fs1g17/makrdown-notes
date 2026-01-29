@@ -4,7 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/jackc/pgconn"
 )
+
+var ErrDuplicateFolder = errors.New("folder with this name already exists")
 
 type Folder struct {
 	ID        int64     `json:"id"`
@@ -47,6 +51,12 @@ func (f *PostgresFoldersStore) CreateFolder(user_id int64, parent_id int64, name
 		&folder.CreatedAt,
 		&folder.UpdatedAt)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				return nil, ErrDuplicateFolder
+			}
+		}
 		return nil, err
 	}
 

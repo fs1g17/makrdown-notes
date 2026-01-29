@@ -12,7 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func httpStatusFromErr(err error) int {
+func httpStatusFromNoteError(err error) int {
 	switch {
 	case errors.Is(err, store.ErrDuplicateNote):
 		return http.StatusConflict
@@ -69,7 +69,7 @@ func (h *NotesHandler) HandleCreateNote(c echo.Context) error {
 	note, err := h.folderContentsService.CreateNote(user, req.FolderID, req.Title, req.Note)
 	if err != nil {
 		h.logger.Printf("Error creating note: %v", err)
-		return c.JSON(httpStatusFromErr(err), utils.Envelope{"error": err.Error()})
+		return c.JSON(httpStatusFromNoteError(err), utils.Envelope{"error": err.Error()})
 	}
 
 	return c.JSON(http.StatusCreated, note)
