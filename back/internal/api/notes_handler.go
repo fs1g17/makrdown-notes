@@ -111,3 +111,38 @@ func (h *NotesHandler) HandleGetNote(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, note)
 }
+
+type patchNoteRequest struct {
+	NoteID int64  `param:"note_id"`
+	Note   string `json:"note"`
+}
+
+func (r *patchNoteRequest) validate() error {
+	if r.NoteID == 0 {
+		return errors.New("note_id is required")
+	}
+
+	return nil
+}
+
+func (h *NotesHandler) HandlePatchNote(c echo.Context) error {
+	var req patchNoteRequest
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+	}
+
+	err := req.validate()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+	}
+
+	user := c.Get("user").(*store.User)
+	note, err := h.notesStore.UpdateNote(user.ID, req.NoteID, req.Note)
+	if err != nil {
+		h.logger.Printf("ERROR: couldn't update the note %v", err)
+		return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+	}
+
+	return c.JSON(http.StatusOK, utils.Envelope{"note": note})
+}
