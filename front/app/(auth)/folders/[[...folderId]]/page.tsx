@@ -8,6 +8,7 @@ import { Folder as FolderIcon, Loader2 } from "lucide-react";
 import { FolderItem } from "./_components/FolderItem";
 import { NoteItem } from "./_components/NoteItem";
 import { CreateNoteDialog } from "./_components/CreateNoteDialog";
+import { CreateFolderDialog } from "./_components/CreateFolderDialog";
 import { useMemo, useState } from "react";
 import CreateContentButton from "./_components/CreateContentButton";
 
@@ -123,6 +124,15 @@ export default function Folders() {
           folderQueryKey={queryKey}
           open={createNoteDialogOpen}
           onClose={() => setCreateNoteDialogOpen(false)}
+        />
+      )}
+
+      {createFolderDialogOpen && (
+        <CreateFolderDialog
+          folderId={folderId}
+          folderQueryKey={queryKey}
+          open={createFolderDialogOpen}
+          onClose={() => setCreateFolderDialogOpen(false)}
         />
       )}
     </>
