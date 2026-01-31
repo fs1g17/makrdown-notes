@@ -1,11 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Note } from "@/types/notes";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import clientFetch from "@/lib/client-side-fetching";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { parseErrorMessage } from "@/lib/utils";
 
 async function getNote(noteId: number | undefined): Promise<Note | undefined> {
   if (!noteId) return;
@@ -17,12 +20,39 @@ export default function NoteEditor() {
   const router = useRouter();
   const params = useParams<{ noteId?: string[] }>();
   const noteId = params.noteId?.[0] ? Number(params.noteId[0]) : undefined;
+  const [noteContent, setNoteContent] = useState("");
 
   const { data: note, isPending, isError } = useQuery({
     queryKey: ["notes", { noteId }],
     queryFn: () => getNote(noteId),
     enabled: !!noteId,
   });
+
+  useEffect(() => {
+    if (note) {
+      setNoteContent(note.note);
+    }
+  }, [note]);
+
+  const { mutate: saveNote, isPending: isSaving } = useMutation({
+    mutationFn: (content: string) =>
+      clientFetch.patch(`/api/notes/${noteId}/save`, { note: content }),
+    onError: (e) => {
+      const errorMessage = parseErrorMessage(e);
+      toast.error("Error saving note", {
+        description: errorMessage || "Your changes haven't been saved"
+      });
+    },
+    onSuccess: () => {
+      toast.success("Note saved", {
+        description: "Your changes have been saved"
+      });
+    },
+  });
+
+  const handleSave = () => {
+    saveNote(noteContent);
+  };
 
   if (!noteId) {
     return (
@@ -79,13 +109,24 @@ export default function NoteEditor() {
               Last updated: {new Date(note.updated_at).toLocaleDateString()}
             </p>
           </div>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || noteContent === note.note}
+          >
+            {isSaving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save
+          </Button>
         </div>
 
         {/* Editor */}
         <div className="rounded-lg border border-border bg-card">
           <textarea
-            value={note.note}
-            readOnly
+            value={noteContent}
+            onChange={(e) => setNoteContent(e.target.value)}
             className="min-h-[calc(100vh-250px)] w-full resize-none bg-transparent p-6 font-mono text-sm leading-relaxed focus:outline-none"
             placeholder="No content"
           />
