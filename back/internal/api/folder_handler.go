@@ -44,10 +44,6 @@ type createFolderRequest struct {
 }
 
 func (r *createFolderRequest) validate() error {
-	if r.ParentID == 0 {
-		return errors.New("parent_id is required")
-	}
-
 	if r.Name == "" {
 		return errors.New("name is required")
 	}
@@ -68,6 +64,14 @@ func (h *FolderHandler) HandleCreateFolder(c echo.Context) error {
 	}
 
 	user := c.Get("user").(*store.User)
+	if req.ParentID == 0 {
+		root_folder_id, err := h.folderStore.GetRootFolder(user.ID)
+		if err != nil {
+			h.logger.Printf("Error: getting root folder id %v", err)
+			return c.JSON(http.StatusInternalServerError, utils.Envelope{"error": err.Error()})
+		}
+		req.ParentID = root_folder_id
+	}
 	folder, err := h.folderContentsService.CreateSubFolder(user, req.ParentID, req.Name)
 	if err != nil {
 		h.logger.Printf("Error creating folder: %v", err)
