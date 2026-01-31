@@ -22,7 +22,7 @@ export default function NoteEditor() {
   const noteId = params.noteId?.[0] ? Number(params.noteId[0]) : undefined;
   const [noteContent, setNoteContent] = useState("");
 
-  const { data: note, isPending, isError } = useQuery({
+  const { data: note, isPending, isError, refetch } = useQuery({
     queryKey: ["notes", { noteId }],
     queryFn: () => getNote(noteId),
     enabled: !!noteId,
@@ -47,6 +47,7 @@ export default function NoteEditor() {
       toast.success("Note saved", {
         description: "Your changes have been saved"
       });
+      refetch();
     },
   });
 
@@ -67,7 +68,7 @@ export default function NoteEditor() {
 
   if (isPending) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div role="status" aria-label="Loading note" className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
