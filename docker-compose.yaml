@@ -20,3 +20,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  test_db:
+    container_name: "markdown-notes-db-test"
+    image: postgres:12.4-alpine
+    volumes:
+      - "./database/postgres-test-data:/var/lib/postgresql/data:rw"
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    restart: unless-stopped
