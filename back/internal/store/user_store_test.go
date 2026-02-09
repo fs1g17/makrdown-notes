@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"markdown-notes/internal/tokens"
 	"testing"
 	"time"
@@ -8,31 +9,57 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func compareUsers(t *testing.T, expectedUser *User, actualUser *User) {
+	t.Helper()
+	assert.Equal(t, expectedUser.ID, actualUser.ID)
+	assert.Equal(t, expectedUser.Username, actualUser.Username)
+	assert.Equal(t, expectedUser.Email, actualUser.Email)
+	assert.Equal(t, expectedUser.PasswordHash.hash, actualUser.PasswordHash.hash)
+	assert.Equal(t, expectedUser.CreatedAt, actualUser.CreatedAt)
+	assert.Equal(t, expectedUser.UpdatedAt, actualUser.UpdatedAt)
+}
+
+func createTestUser(t *testing.T, db *sql.DB, userStore UserStore, username string, email string, password string) (*User, error) {
+	t.Helper()
+
+	user := &User{
+		Username: username,
+		Email:    email,
+	}
+
+	if err := user.PasswordHash.Set(password); err != nil {
+		t.Fatalf("failed to set password: %v", err)
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("failed to begin tx: %v", err)
+	}
+
+	err = userStore.CreateUser(tx, user)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("failed to commit: %v", err)
+	}
+
+	return user, nil
+}
+
 func TestCreateUser(t *testing.T) {
 	db := SetupTestDB(t)
 	TruncateTables(t, db)
 	userStore := NewPostgresUserStore(db)
 
 	t.Run("creates user successfully", func(t *testing.T) {
-		user := &User{
-			Username: "Theo",
-			Email:    "drumandbassbob@gmail.com",
-		}
-
-		err := user.PasswordHash.Set("Password")
-		assert.NoError(t, err)
-
-		tx, err := db.Begin()
-		assert.NoError(t, err)
-		defer tx.Rollback()
-
-		err = userStore.CreateUser(tx, user)
+		user, err := createTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
 		assert.NoError(t, err)
 		assert.NotZero(t, user.ID, "ID should be populated by RETURNING clause")
 		assert.NotZero(t, user.CreatedAt)
 		assert.NotZero(t, user.UpdatedAt)
-
-		tx.Commit()
 
 		query := `
 		SELECT id, username, email, password_hash, created_at, updated_at
@@ -43,46 +70,19 @@ func TestCreateUser(t *testing.T) {
 		err = db.QueryRow(query, user.Username).Scan(&dbUser.ID, &dbUser.Username, &dbUser.Email, &dbUser.PasswordHash.hash, &dbUser.CreatedAt, &dbUser.UpdatedAt)
 		assert.NoError(t, err)
 
-		assert.Equal(t, user.ID, dbUser.ID)
-		assert.Equal(t, user.Username, dbUser.Username)
-		assert.Equal(t, user.Email, dbUser.Email)
-		assert.Equal(t, user.PasswordHash.hash, dbUser.PasswordHash.hash)
-		assert.Equal(t, user.CreatedAt, dbUser.CreatedAt)
-		assert.Equal(t, user.UpdatedAt, dbUser.UpdatedAt)
+		compareUsers(t, user, &dbUser)
 	})
 
 	t.Run("fails to create user with duplicate username", func(t *testing.T) {
-		user := &User{
-			Username: "Theo",
-			Email:    "example@gmail.com",
-		}
-
-		err := user.PasswordHash.Set("Password")
-		assert.NoError(t, err)
-
-		tx, err := db.Begin()
-		assert.NoError(t, err)
-		defer tx.Rollback()
-
-		err = userStore.CreateUser(tx, user)
+		user, err := createTestUser(t, db, userStore, "Theo", "other@gmail.com", "Password")
 		assert.Error(t, err, "Expected to fail creating duplicate user")
+		assert.Nil(t, user)
 	})
 
 	t.Run("fails to create user with duplicate email", func(t *testing.T) {
-		user := &User{
-			Username: "Bob",
-			Email:    "drumandbassbob@gmail.com",
-		}
-
-		err := user.PasswordHash.Set("Password")
-		assert.NoError(t, err)
-
-		tx, err := db.Begin()
-		assert.NoError(t, err)
-		defer tx.Rollback()
-
-		err = userStore.CreateUser(tx, user)
+		user, err := createTestUser(t, db, userStore, "Other", "drumandbassbob@gmail.com", "Password")
 		assert.Error(t, err, "Expected to fail creating duplicate user")
+		assert.Nil(t, user)
 	})
 }
 
@@ -91,31 +91,13 @@ func TestGetUserByUsername(t *testing.T) {
 	TruncateTables(t, db)
 	userStore := NewPostgresUserStore(db)
 
-	user := &User{
-		Username: "Theo",
-		Email:    "drumandbassbob@gmail.com",
-	}
-
-	err := user.PasswordHash.Set("Password")
+	user, err := createTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
 	assert.NoError(t, err)
-
-	tx, err := db.Begin()
-	assert.NoError(t, err)
-	defer tx.Rollback()
-
-	err = userStore.CreateUser(tx, user)
-	assert.NoError(t, err)
-	tx.Commit()
 
 	t.Run("get existing user by username", func(t *testing.T) {
 		dbUser, err := userStore.GetUserByUsername(user.Username)
 		assert.NoError(t, err)
-		assert.Equal(t, user.ID, dbUser.ID)
-		assert.Equal(t, user.Username, dbUser.Username)
-		assert.Equal(t, user.Email, dbUser.Email)
-		assert.Equal(t, user.PasswordHash.hash, dbUser.PasswordHash.hash)
-		assert.Equal(t, user.CreatedAt, dbUser.CreatedAt)
-		assert.Equal(t, user.UpdatedAt, dbUser.UpdatedAt)
+		compareUsers(t, user, dbUser)
 	})
 
 	t.Run("returns nil when not found", func(t *testing.T) {
@@ -131,48 +113,24 @@ func TestGetUserToken(t *testing.T) {
 	userStore := NewPostgresUserStore(db)
 	tokenStore := NewPostgresTokenStore(db)
 
-	user := &User{
-		Username: "Theo",
-		Email:    "drumandbassbob@gmail.com",
-	}
-
-	err := user.PasswordHash.Set("Password")
+	user, err := createTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
 	assert.NoError(t, err)
-
-	tx, err := db.Begin()
-	assert.NoError(t, err)
-	err = userStore.CreateUser(tx, user)
-	assert.NoError(t, err)
-	err = tx.Commit()
+	otherUser, err := createTestUser(t, db, userStore, "Theo2", "example@gmail.com", "Password")
 	assert.NoError(t, err)
 
 	token, err := tokenStore.CreateNewToken(user.ID, 24*time.Hour, tokens.ScopeAuth)
+	assert.NoError(t, err)
+	outdatedToken, err := tokenStore.CreateNewToken(otherUser.ID, -1*time.Second, tokens.ScopeAuth)
 	assert.NoError(t, err)
 
 	t.Run("ensure sign in with valid token", func(t *testing.T) {
 		dbUser, err := userStore.GetUserToken(tokens.ScopeAuth, token.Plaintext)
 		assert.NoError(t, err)
-
-		assert.Equal(t, user.ID, dbUser.ID)
-		assert.Equal(t, user.Username, dbUser.Username)
-		assert.Equal(t, user.Email, dbUser.Email)
-		assert.Equal(t, user.PasswordHash.hash, dbUser.PasswordHash.hash)
-		assert.Equal(t, user.CreatedAt, dbUser.CreatedAt)
-		assert.Equal(t, user.UpdatedAt, dbUser.UpdatedAt)
+		compareUsers(t, user, dbUser)
 	})
 
 	t.Run("ensure failed sign in when token is outdated", func(t *testing.T) {
-		query := `
-		UPDATE tokens 
-		SET expiry = $1 
-		WHERE user_id = $2 and scope = $3;
-		`
-
-		var expiry time.Time = time.Now().Add(-1 * time.Second)
-		_, err := db.Exec(query, expiry, user.ID, tokens.ScopeAuth)
-		assert.NoError(t, err)
-
-		dbUser, err := userStore.GetUserToken(tokens.ScopeAuth, token.Plaintext)
+		dbUser, err := userStore.GetUserToken(tokens.ScopeAuth, outdatedToken.Plaintext)
 		assert.NoError(t, err)
 		assert.Nil(t, dbUser)
 	})
