@@ -68,3 +68,34 @@ func TestCreateFolder(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestGetRootFolder(t *testing.T) {
+	db := SetupTestDB(t)
+	TruncateTables(t, db)
+	folderStore := NewPostgresFoldersStore(db)
+	userStore := NewPostgresUserStore(db)
+
+	user, err := createTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
+	assert.NoError(t, err)
+
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("failed to begin tx: %v", err)
+	}
+
+	rootFolderId, err := folderStore.CreateFolderTx(tx, user.ID, nil, "root")
+	assert.NoError(t, err)
+	tx.Commit()
+
+	t.Run("gets root folder for existing user", func(t *testing.T) {
+		dbFolderId, err := folderStore.GetRootFolder(user.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, rootFolderId, dbFolderId)
+	})
+
+	t.Run("fails to get root folder for non-existent user", func(t *testing.T) {
+		dbFolderId, err := folderStore.GetRootFolder(72)
+		assert.Error(t, err)
+		assert.Equal(t, int64(0), dbFolderId)
+	})
+}
