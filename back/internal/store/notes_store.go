@@ -67,11 +67,11 @@ func (n *PostgresNotesStore) GetNotesInFolder(user_id int64, folder_id int64) ([
 	query := `
 	SELECT id, folder_id, title, note, created_at, updated_at
 	FROM notes
-	WHERE folder_id = $1
+	WHERE folder_id = $1 AND user_id = $2
 	ORDER BY updated_at;
 	`
 
-	rows, err := n.db.Query(query, folder_id)
+	rows, err := n.db.Query(query, folder_id, user_id)
 	if err != nil {
 		return nil, err
 	}
