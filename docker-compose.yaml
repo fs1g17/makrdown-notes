@@ -17,6 +17,20 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  frontend:
+    container_name: "markdown-notes-frontend"
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+      args:
+        BACKEND_BASE_URL: http://markdown-notes-backend:8080
+        NEXT_PUBLIC_BACKEND_BASE_URL: http://markdown-notes-backend:8080
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+
   db:
     container_name: "markdown-notes-db"
     image: postgres:12.4-alpine
