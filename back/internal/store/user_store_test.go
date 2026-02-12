@@ -9,16 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func compareUsers(t *testing.T, expectedUser *User, actualUser *User) {
-	t.Helper()
-	assert.Equal(t, expectedUser.ID, actualUser.ID)
-	assert.Equal(t, expectedUser.Username, actualUser.Username)
-	assert.Equal(t, expectedUser.Email, actualUser.Email)
-	assert.Equal(t, expectedUser.PasswordHash.hash, actualUser.PasswordHash.hash)
-	assert.Equal(t, expectedUser.CreatedAt, actualUser.CreatedAt)
-	assert.Equal(t, expectedUser.UpdatedAt, actualUser.UpdatedAt)
-}
-
 func createTestUser(t *testing.T, db *sql.DB, userStore UserStore, username string, email string, password string) (*User, error) {
 	t.Helper()
 
@@ -70,7 +60,7 @@ func TestCreateUser(t *testing.T) {
 		err = db.QueryRow(query, user.Username).Scan(&dbUser.ID, &dbUser.Username, &dbUser.Email, &dbUser.PasswordHash.hash, &dbUser.CreatedAt, &dbUser.UpdatedAt)
 		assert.NoError(t, err)
 
-		compareUsers(t, user, &dbUser)
+		CompareUsers(t, user, &dbUser)
 	})
 
 	t.Run("fails to create user with duplicate username", func(t *testing.T) {
@@ -97,7 +87,7 @@ func TestGetUserByUsername(t *testing.T) {
 	t.Run("get existing user by username", func(t *testing.T) {
 		dbUser, err := userStore.GetUserByUsername(user.Username)
 		assert.NoError(t, err)
-		compareUsers(t, user, dbUser)
+		CompareUsers(t, user, dbUser)
 	})
 
 	t.Run("returns nil when not found", func(t *testing.T) {
@@ -126,7 +116,7 @@ func TestGetUserToken(t *testing.T) {
 	t.Run("ensure sign in with valid token", func(t *testing.T) {
 		dbUser, err := userStore.GetUserToken(tokens.ScopeAuth, token.Plaintext)
 		assert.NoError(t, err)
-		compareUsers(t, user, dbUser)
+		CompareUsers(t, user, dbUser)
 	})
 
 	t.Run("ensure failed sign in when token is outdated", func(t *testing.T) {

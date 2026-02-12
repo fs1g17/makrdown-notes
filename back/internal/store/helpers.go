@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/stretchr/testify/assert"
 )
 
 func SetupTestDB(t *testing.T) *sql.DB {
@@ -30,4 +31,14 @@ func TruncateTables(t *testing.T, db *sql.DB) {
 			t.Fatalf("truncate %s: %v", table, err)
 		}
 	}
+}
+
+func CompareUsers(t *testing.T, expectedUser *User, actualUser *User) {
+	t.Helper()
+	assert.Equal(t, expectedUser.ID, actualUser.ID)
+	assert.Equal(t, expectedUser.Username, actualUser.Username)
+	assert.Equal(t, expectedUser.Email, actualUser.Email)
+	assert.Equal(t, expectedUser.PasswordHash.hash, actualUser.PasswordHash.hash)
+	assert.Equal(t, expectedUser.CreatedAt, actualUser.CreatedAt)
+	assert.Equal(t, expectedUser.UpdatedAt, actualUser.UpdatedAt)
 }
