@@ -3,6 +3,20 @@ version: "3.8"
 name: markdown-notes
 
 services:
+  backend:
+    container_name: "markdown-notes-backend"
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: "host=db user=postgres password=postgres dbname=postgres port=5432 sslmode=disable"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
   db:
     container_name: "markdown-notes-db"
     image: postgres:12.4-alpine
