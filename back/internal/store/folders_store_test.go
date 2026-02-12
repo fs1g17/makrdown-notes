@@ -28,6 +28,27 @@ func createRootFolder(t *testing.T, db *sql.DB, folderStore PostgresFoldersStore
 	return rootFolderId
 }
 
+func createSubFolder(t *testing.T, db *sql.DB, folderStore PostgresFoldersStore, user *User, parent_id int64, name string) *Folder {
+	t.Helper()
+
+	folder, err := folderStore.CreateFolder(user.ID, parent_id, name)
+	if err != nil {
+		t.Fatalf("failed to create subfolder: %v", err)
+	}
+
+	return folder
+}
+
+func compareFolders(t *testing.T, f1 *Folder, f2 *Folder) {
+	t.Helper()
+	assert.Equal(t, f1.ID, f2.ID)
+	assert.Equal(t, f1.UserID, f2.UserID)
+	assert.Equal(t, f1.ParentID, f2.ParentID)
+	assert.Equal(t, f1.Name, f2.Name)
+	assert.Equal(t, f1.CreatedAt, f2.CreatedAt)
+	assert.Equal(t, f1.UpdatedAt, f2.UpdatedAt)
+}
+
 func TestCreateFolder(t *testing.T) {
 	db := SetupTestDB(t)
 	TruncateTables(t, db)
@@ -131,5 +152,46 @@ func TestUserOwnsFolder(t *testing.T) {
 		owns, err := folderStore.UserOwnsFolder(user2.ID, rootFolderId)
 		assert.Error(t, err)
 		assert.False(t, owns)
+	})
+}
+
+func TestGetSubFolders(t *testing.T) {
+	db := SetupTestDB(t)
+	TruncateTables(t, db)
+	folderStore := NewPostgresFoldersStore(db)
+	userStore := NewPostgresUserStore(db)
+
+	user, err := createTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
+	assert.NoError(t, err)
+
+	rootFolderId := createRootFolder(t, db, *folderStore, user)
+
+	t.Run("returns empty array when no subfolders exist", func(t *testing.T) {
+		folders, err := folderStore.GetSubFolders(user.ID, rootFolderId)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(folders))
+	})
+
+	t.Run("returns empty array when called with non-existent parent-id", func(t *testing.T) {
+		folders, err := folderStore.GetSubFolders(user.ID, 72)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(folders))
+	})
+
+	t.Run("returns subfolders", func(t *testing.T) {
+		subFolder := createSubFolder(t, db, *folderStore, user, rootFolderId, "subfolder")
+		folders, err := folderStore.GetSubFolders(user.ID, rootFolderId)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(folders))
+
+		compareFolders(t, subFolder, &(folders[0]))
+	})
+
+	t.Run("does not return other user's subfolders", func(t *testing.T) {
+		user2, _ := createTestUser(t, db, userStore, "Theo2", "example@gmail.com", "Password")
+		folders, err := folderStore.GetSubFolders(user2.ID, rootFolderId)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(folders))
 	})
 }
