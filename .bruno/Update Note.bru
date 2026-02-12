@@ -1,0 +1,22 @@
+meta {
+  name: Update Note
+  type: http
+  seq: 9
+}
+
+patch {
+  url: http://localhost:8080/notes/1/save
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "note": "hello"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

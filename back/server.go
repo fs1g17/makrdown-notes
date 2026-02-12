@@ -42,4 +42,6 @@ func restricted(g *echo.Group, app *app.App) {
 
 	g.POST("/notes/new", app.NotesHandler.HandleCreateNote)
 	g.POST("/folders/new", app.FolderHandler.HandleCreateFolder)
+
+	g.PATCH("/notes/:note_id/save", app.NotesHandler.HandlePatchNote)
 }

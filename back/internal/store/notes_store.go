@@ -31,6 +31,7 @@ type NotesStore interface {
 	CreateNote(user_id int64, folder_id int64, title string, note string) (*Note, error)
 	GetNotesInFolder(user_id int64, folder_id int64) ([]Note, error)
 	GetNote(user_id int64, note_id int64) (*Note, error)
+	UpdateNote(user_id int64, note_id int64, note string) (*Note, error)
 }
 
 func (n *PostgresNotesStore) CreateNote(user_id int64, folder_id int64, title string, note string) (*Note, error) {
@@ -66,11 +67,11 @@ func (n *PostgresNotesStore) GetNotesInFolder(user_id int64, folder_id int64) ([
 	query := `
 	SELECT id, folder_id, title, note, created_at, updated_at
 	FROM notes
-	WHERE folder_id = $1
+	WHERE folder_id = $1 AND user_id = $2
 	ORDER BY updated_at;
 	`
 
-	rows, err := n.db.Query(query, folder_id)
+	rows, err := n.db.Query(query, folder_id, user_id)
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +114,31 @@ func (n *PostgresNotesStore) GetNote(user_id int64, note_id int64) (*Note, error
 		&dbNote.CreatedAt,
 		&dbNote.UpdatedAt,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dbNote, nil
+}
+
+func (n *PostgresNotesStore) UpdateNote(user_id int64, note_id int64, note string) (*Note, error) {
+	query := `
+	UPDATE notes
+	SET note = $1, updated_at = now()
+	WHERE user_id = $2 AND id = $3
+	RETURNING id, folder_id, title, note, created_at, updated_at;
+	`
+
+	var dbNote Note
+	err := n.db.QueryRow(query, note, user_id, note_id).Scan(
+		&dbNote.ID,
+		&dbNote.FolderID,
+		&dbNote.Title,
+		&dbNote.Note,
+		&dbNote.CreatedAt,
+		&dbNote.UpdatedAt,
+	)
+
 	if err != nil {
 		return nil, err
 	}
