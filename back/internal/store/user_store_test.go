@@ -14,8 +14,7 @@ func TestCreateUser(t *testing.T) {
 	userStore := NewPostgresUserStore(db)
 
 	t.Run("creates user successfully", func(t *testing.T) {
-		user, err := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
-		assert.NoError(t, err)
+		user := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
 		assert.NotZero(t, user.ID, "ID should be populated by RETURNING clause")
 		assert.NotZero(t, user.CreatedAt)
 		assert.NotZero(t, user.UpdatedAt)
@@ -26,22 +25,32 @@ func TestCreateUser(t *testing.T) {
 		WHERE username = $1;`
 
 		var dbUser User
-		err = db.QueryRow(query, user.Username).Scan(&dbUser.ID, &dbUser.Username, &dbUser.Email, &dbUser.PasswordHash.hash, &dbUser.CreatedAt, &dbUser.UpdatedAt)
+		err := db.QueryRow(query, user.Username).Scan(&dbUser.ID, &dbUser.Username, &dbUser.Email, &dbUser.PasswordHash.hash, &dbUser.CreatedAt, &dbUser.UpdatedAt)
 		assert.NoError(t, err)
 
 		CompareUsers(t, user, &dbUser)
 	})
 
 	t.Run("fails to create user with duplicate username", func(t *testing.T) {
-		user, err := CreateTestUser(t, db, userStore, "Theo", "other@gmail.com", "Password")
+		user := &User{
+			Username: "Theo",
+			Email:    "other@gmail.com",
+		}
+		user.PasswordHash.Set("Password")
+		tx, _ := db.Begin()
+		err := userStore.CreateUser(tx, user)
 		assert.Error(t, err, "Expected to fail creating duplicate user")
-		assert.Nil(t, user)
 	})
 
 	t.Run("fails to create user with duplicate email", func(t *testing.T) {
-		user, err := CreateTestUser(t, db, userStore, "Other", "drumandbassbob@gmail.com", "Password")
+		user := &User{
+			Username: "Other",
+			Email:    "drumandbassbob@gmail.com",
+		}
+		user.PasswordHash.Set("Password")
+		tx, _ := db.Begin()
+		err := userStore.CreateUser(tx, user)
 		assert.Error(t, err, "Expected to fail creating duplicate user")
-		assert.Nil(t, user)
 	})
 }
 
@@ -50,8 +59,7 @@ func TestGetUserByUsername(t *testing.T) {
 	TruncateTables(t, db)
 	userStore := NewPostgresUserStore(db)
 
-	user, err := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
-	assert.NoError(t, err)
+	user := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
 
 	t.Run("get existing user by username", func(t *testing.T) {
 		dbUser, err := userStore.GetUserByUsername(user.Username)
@@ -72,10 +80,8 @@ func TestGetUserToken(t *testing.T) {
 	userStore := NewPostgresUserStore(db)
 	tokenStore := NewPostgresTokenStore(db)
 
-	user, err := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
-	assert.NoError(t, err)
-	otherUser, err := CreateTestUser(t, db, userStore, "Theo2", "example@gmail.com", "Password")
-	assert.NoError(t, err)
+	user := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
+	otherUser := CreateTestUser(t, db, userStore, "Theo2", "example@gmail.com", "Password")
 
 	token, err := tokenStore.CreateNewToken(user.ID, 24*time.Hour, tokens.ScopeAuth)
 	assert.NoError(t, err)

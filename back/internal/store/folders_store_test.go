@@ -24,8 +24,7 @@ func TestCreateFolder(t *testing.T) {
 	folderStore := NewPostgresFoldersStore(db)
 	userStore := NewPostgresUserStore(db)
 
-	user, err := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
-	assert.NoError(t, err)
+	user := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
 
 	var rootFolderId int64
 	subfolderName := "subfolder"
@@ -39,7 +38,7 @@ func TestCreateFolder(t *testing.T) {
 		`
 
 		var rootFolder Folder
-		err = db.QueryRow(query, rootFolderId).Scan(&rootFolder.ID, &rootFolder.UserID, &rootFolder.ParentID, &rootFolder.Name, &rootFolder.CreatedAt, &rootFolder.UpdatedAt)
+		err := db.QueryRow(query, rootFolderId).Scan(&rootFolder.ID, &rootFolder.UserID, &rootFolder.ParentID, &rootFolder.Name, &rootFolder.CreatedAt, &rootFolder.UpdatedAt)
 		assert.NoError(t, err)
 
 		assert.Equal(t, rootFolderId, rootFolder.ID)
@@ -80,8 +79,7 @@ func TestGetRootFolder(t *testing.T) {
 	folderStore := NewPostgresFoldersStore(db)
 	userStore := NewPostgresUserStore(db)
 
-	user, err := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
-	assert.NoError(t, err)
+	user := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
 
 	rootFolderId := CreateRootFolder(t, db, *folderStore, user)
 
@@ -104,10 +102,8 @@ func TestUserOwnsFolder(t *testing.T) {
 	folderStore := NewPostgresFoldersStore(db)
 	userStore := NewPostgresUserStore(db)
 
-	user, err := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
-	assert.NoError(t, err)
-	user2, err := CreateTestUser(t, db, userStore, "Theo2", "example@gmail.com", "Password")
-	assert.NoError(t, err)
+	user := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
+	user2 := CreateTestUser(t, db, userStore, "Theo2", "example@gmail.com", "Password")
 
 	rootFolderId := CreateRootFolder(t, db, *folderStore, user)
 
@@ -130,8 +126,7 @@ func TestGetSubFolders(t *testing.T) {
 	folderStore := NewPostgresFoldersStore(db)
 	userStore := NewPostgresUserStore(db)
 
-	user, err := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
-	assert.NoError(t, err)
+	user := CreateTestUser(t, db, userStore, "Theo", "drumandbassbob@gmail.com", "Password")
 
 	rootFolderId := CreateRootFolder(t, db, *folderStore, user)
 
@@ -158,7 +153,7 @@ func TestGetSubFolders(t *testing.T) {
 	})
 
 	t.Run("does not return other user's subfolders", func(t *testing.T) {
-		user2, _ := CreateTestUser(t, db, userStore, "Theo2", "example@gmail.com", "Password")
+		user2 := CreateTestUser(t, db, userStore, "Theo2", "example@gmail.com", "Password")
 		folders, err := folderStore.GetSubFolders(user2.ID, rootFolderId)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(folders))

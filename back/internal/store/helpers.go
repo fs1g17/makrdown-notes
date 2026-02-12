@@ -74,7 +74,7 @@ func CreateRootFolder(t *testing.T, db *sql.DB, folderStore PostgresFoldersStore
 	return rootFolderId
 }
 
-func CreateTestUser(t *testing.T, db *sql.DB, userStore UserStore, username string, email string, password string) (*User, error) {
+func CreateTestUser(t *testing.T, db *sql.DB, userStore UserStore, username string, email string, password string) *User {
 	t.Helper()
 
 	user := &User{
@@ -93,13 +93,12 @@ func CreateTestUser(t *testing.T, db *sql.DB, userStore UserStore, username stri
 
 	err = userStore.CreateUser(tx, user)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
+		t.Fatalf("failed to create user: %v", err)
 	}
 
 	if err := tx.Commit(); err != nil {
 		t.Fatalf("failed to commit: %v", err)
 	}
 
-	return user, nil
+	return user
 }
